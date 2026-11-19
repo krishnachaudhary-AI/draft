@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Task Manager</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 520px; margin: 40px auto; padding: 0 16px; background: #f5f6f8; color: #222; }
+  h1 { text-align: center; }
+  form { display: flex; gap: 8px; margin-bottom: 16px; }
+  input[type=text] { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
+  button { padding: 8px 12px; border: 0; border-radius: 6px; background: #3b6ef5; color: #fff; cursor: pointer; }
+  button.secondary { background: #888; }
+  button.danger { background: #d9534f; }
+  ul { list-style: none; padding: 0; }
+  li { display: flex; align-items: center; gap: 8px; background: #fff; padding: 10px; margin-bottom: 8px; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  li span { flex: 1; }
+  li.done span { text-decoration: line-through; color: #999; }
+  .empty { text-align: center; color: #888; }
+</style>
+</head>
+<body>
+<h1>Task Manager</h1>
+<form id="add-form">
+  <input type="text" id="title" placeholder="New task..." required>
+  <button>Add</button>
+</form>
+<ul id="list"></ul>
+
+<script>
+const API = "/api/tasks";
+const list = document.getElementById("list");
+
+async function api(method, id = "", body) {
+  const res = await fetch(`${API}/${id}`, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) throw new Error((await res.json()).error || res.statusText);
+  return res.status === 204 ? null : res.json();
+}
+
+async function render() {
+  const tasks = await api("GET");
+  list.innerHTML = "";
+  if (!tasks.length) list.innerHTML = '<p class="empty">No tasks yet.</p>';
+  for (const t of tasks) {
+    const li = document.createElement("li");
+    if (t.done) li.className = "done";
+
+    const cb = document.createElement("input");
+    cb.type = "checkbox"; cb.checked = t.done;
+    cb.onchange = async () => { await api("PUT", t.id, { done: cb.checked }); render(); };
+
+    const span = document.createElement("span");
+    span.textContent = t.title;
+
+    const edit = document.createElement("button");
+    edit.textContent = "Edit"; edit.className = "secondary";
+    edit.onclick = async () => {
+      const title = prompt("Edit task", t.title);
+      if (title === null) return;
+      try { await api("PUT", t.id, { title }); render(); } catch (e) { alert(e.message); }
+    };
+
+    const del = document.createElement("button");
+    del.textContent = "Delete"; del.className = "danger";
+    del.onclick = async () => { await api("DELETE", t.id); render(); };
+
+    li.append(cb, span, edit, del);
+    list.appendChild(li);
+  }
+}
+
+document.getElementById("add-form").onsubmit = async (e) => {
+  e.preventDefault();
+  const input = document.getElementById("title");
+  try { await api("POST", "", { title: input.value }); input.value = ""; render(); }
+  catch (err) { alert(err.message); }
+};
+
+render();
+</script>
+</body>
+</html>
