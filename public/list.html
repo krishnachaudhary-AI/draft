@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Task List</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; background: #f5f6f8; color: #222; }
+  h1 { text-align: center; }
+  a { color: #3b6ef5; }
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
+  th { background: #3b6ef5; color: #fff; }
+  .done { color: #2e8b57; }
+  .pending { color: #c77d00; }
+  .empty { text-align: center; color: #888; }
+  .summary { margin: 12px 0; color: #555; }
+</style>
+</head>
+<body>
+<h1>Task List</h1>
+<p><a href="/">&larr; Back to manage tasks</a></p>
+<p class="summary" id="summary"></p>
+<table>
+  <thead><tr><th>#</th><th>Title</th><th>Status</th><th>Created</th></tr></thead>
+  <tbody id="rows"></tbody>
+</table>
+
+<script>
+fetch("/api/tasks").then(r => r.json()).then(tasks => {
+  const rows = document.getElementById("rows");
+  const done = tasks.filter(t => t.done).length;
+  document.getElementById("summary").textContent =
+    `${tasks.length} total · ${done} completed · ${tasks.length - done} pending`;
+  if (!tasks.length) {
+    rows.innerHTML = '<tr><td colspan="4" class="empty">No tasks yet.</td></tr>';
+    return;
+  }
+  tasks.forEach((t, i) => {
+    const tr = document.createElement("tr");
+    const cells = [i + 1, t.title, t.done ? "Done" : "Pending", new Date(t.createdAt).toLocaleString()];
+    cells.forEach((c, j) => {
+      const td = document.createElement("td");
+      td.textContent = c;
+      if (j === 2) td.className = t.done ? "done" : "pending";
+      tr.appendChild(td);
+    });
+    rows.appendChild(tr);
+  });
+});
+</script>
+</body>
+</html>
