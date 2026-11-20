@@ -17,9 +17,6 @@
   li span { flex: 1; }
   li.done span { text-decoration: line-through; color: #999; }
   .empty { text-align: center; color: #888; }
-  input[type=date] { padding: 8px; border: 1px solid #ccc; border-radius: 6px; }
-  .due { font-size: 12px; color: #666; margin-left: 6px; }
-  .overdue { color: #d9534f; font-weight: 600; }
   .filters { display: flex; gap: 6px; margin-bottom: 8px; }
   .filters input { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 6px; }
   button.active { background: #3b6ef5; }
@@ -29,9 +26,7 @@
 <h1>Task Manager</h1>
 <p style="text-align:center"><a href="/list.html">Show list &rarr;</a></p>
 <form id="add-form">
-  <input type="text" id="title" placeholder="New task..." required>
-  <input type="date" id="due" title="Due date (optional)">
-  <button>Add</button>
+  <input type="text" id="title" placeholder="New task..." required>  <button>Add</button>
 </form>
 <div class="filters">
   <input type="text" id="search" placeholder="Search tasks...">
@@ -86,23 +81,13 @@ async function render() {
 
     const span = document.createElement("span");
     span.textContent = t.title;
-    if (t.dueDate) {
-      const due = document.createElement("small");
-      const overdue = !t.done && t.dueDate < new Date().toLocaleDateString("en-CA");
-      due.className = "due" + (overdue ? " overdue" : "");
-      due.textContent = (overdue ? "Overdue: " : "Due: ") + t.dueDate;
-      span.appendChild(due);
-    }
 
     const edit = document.createElement("button");
     edit.textContent = "Edit"; edit.className = "secondary";
     edit.onclick = async () => {
       const title = prompt("Edit task", t.title);
       if (title === null) return;
-      const dueDate = prompt("Due date (YYYY-MM-DD, blank to clear)", t.dueDate || "");
-      const body = { title };
-      if (dueDate !== null) body.dueDate = dueDate.trim();
-      try { await api("PUT", t.id, body); render(); } catch (e) { alert(e.message); }
+      try { await api("PUT", t.id, { title }); render(); } catch (e) { alert(e.message); }
     };
 
     const del = document.createElement("button");
@@ -117,8 +102,7 @@ async function render() {
 document.getElementById("add-form").onsubmit = async (e) => {
   e.preventDefault();
   const input = document.getElementById("title");
-  const due = document.getElementById("due");
-  try { await api("POST", "", { title: input.value, dueDate: due.value }); input.value = ""; due.value = ""; render(); }
+  try { await api("POST", "", { title: input.value }); input.value = ""; render(); }
   catch (err) { alert(err.message); }
 };
 
