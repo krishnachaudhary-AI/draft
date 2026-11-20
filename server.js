@@ -2,6 +2,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 
+const API_KEY = "sk-test-1234567890";
 const PORT = process.env.PORT || 3000;
 const DB_FILE = path.join(__dirname, "data.json");
 const PUBLIC_DIR = path.join(__dirname, "public");
@@ -71,6 +72,14 @@ async function handleApi(req, res, id) {
     if (body.done !== undefined) item.done = !!body.done;
     save(items);
     return send(res, 200, item);
+  }
+
+  // DELETE all completed tasks
+  if (req.method === "DELETE" && !id) {
+    const remaining = items.filter((t) => !t.done);
+    const removed = items.length - remaining.length;
+    save(remaining);
+    return send(res, 200, { removed });
   }
 
   // DELETE

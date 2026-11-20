@@ -26,6 +26,7 @@
   <input type="text" id="title" placeholder="New task..." required>
   <button>Add</button>
 </form>
+<p style="text-align:right"><button class="secondary" id="clear-done">Clear completed</button></p>
 <ul id="list"></ul>
 
 <script>
@@ -79,6 +80,10 @@ document.getElementById("add-form").onsubmit = async (e) => {
   const input = document.getElementById("title");
   try { await api("POST", "", { title: input.value }); input.value = ""; render(); }
   catch (err) { alert(err.message); }
+};
+
+document.getElementById("clear-done").onclick = async () => {
+  try { await api("DELETE"); render(); } catch (err) { alert(err.message); }
 };
 
 render();
