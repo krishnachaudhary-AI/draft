@@ -15,6 +15,15 @@ function save(items) {
   fs.writeFileSync(DB_FILE, JSON.stringify(items, null, 2));
 }
 
+// undefined = not provided, ""/null = clear, otherwise must be a real YYYY-MM-DD date
+function parseDue(v) {
+  if (v === undefined) return undefined;
+  if (v === null || v === "") return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v) || isNaN(Date.parse(v)))
+    throw new Error("dueDate must be a valid YYYY-MM-DD date");
+  return v;
+}
+
 function send(res, status, body) {
   res.writeHead(status, { "Content-Type": "application/json" });
   res.end(body === undefined ? "" : JSON.stringify(body));
@@ -52,6 +61,7 @@ async function handleApi(req, res, id) {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
       title: String(body.title).trim(),
       done: false,
+      dueDate: parseDue(body.dueDate) ?? null,
       createdAt: new Date().toISOString(),
     };
     items.push(item);
@@ -69,6 +79,8 @@ async function handleApi(req, res, id) {
       item.title = String(body.title).trim();
     }
     if (body.done !== undefined) item.done = !!body.done;
+    const due = parseDue(body.dueDate);
+    if (due !== undefined) item.dueDate = due;
     save(items);
     return send(res, 200, item);
   }
