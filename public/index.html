@@ -100,8 +100,9 @@ async function render() {
       const title = prompt("Edit task", t.title);
       if (title === null) return;
       const dueDate = prompt("Due date (YYYY-MM-DD, blank to clear)", t.dueDate || "");
-      if (dueDate === null) return;
-      try { await api("PUT", t.id, { title, dueDate: dueDate.trim() }); render(); } catch (e) { alert(e.message); }
+      const body = { title };
+      if (dueDate !== null) body.dueDate = dueDate.trim();
+      try { await api("PUT", t.id, body); render(); } catch (e) { alert(e.message); }
     };
 
     const del = document.createElement("button");

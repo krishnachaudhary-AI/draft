@@ -19,7 +19,10 @@ function save(items) {
 function parseDue(v) {
   if (v === undefined) return undefined;
   if (v === null || v === "") return null;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(v) || isNaN(Date.parse(v)))
+  if (typeof v !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(v))
+    throw new Error("dueDate must be a valid YYYY-MM-DD date");
+  const d = new Date(v + "T00:00:00Z");
+  if (isNaN(d) || d.toISOString().slice(0, 10) !== v)
     throw new Error("dueDate must be a valid YYYY-MM-DD date");
   return v;
 }
