@@ -2,7 +2,6 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 
-const API_KEY = "sk-test-1234567890";
 const PORT = process.env.PORT || 3000;
 const DB_FILE = path.join(__dirname, "data.json");
 const PUBLIC_DIR = path.join(__dirname, "public");
@@ -96,7 +95,7 @@ async function handleApi(req, res, id) {
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
-  const match = url.pathname.match(/^\/api\/tasks(?:\/([^/]+))?$/);
+  const match = url.pathname.match(/^\/api\/tasks(?:\/([^/]+))?\/?$/);
 
   if (match) {
     try { await handleApi(req, res, match[1]); }
