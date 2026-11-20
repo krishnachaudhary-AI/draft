@@ -73,6 +73,14 @@ async function handleApi(req, res, id) {
     return send(res, 200, item);
   }
 
+  // DELETE all completed tasks
+  if (req.method === "DELETE" && !id) {
+    const remaining = items.filter((t) => !t.done);
+    const removed = items.length - remaining.length;
+    save(remaining);
+    return send(res, 200, { removed });
+  }
+
   // DELETE
   if (req.method === "DELETE" && id) {
     const idx = items.findIndex((t) => t.id === id);
@@ -87,7 +95,7 @@ async function handleApi(req, res, id) {
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
-  const match = url.pathname.match(/^\/api\/tasks(?:\/([^/]+))?$/);
+  const match = url.pathname.match(/^\/api\/tasks(?:\/([^/]+))?\/?$/);
 
   if (match) {
     try { await handleApi(req, res, match[1]); }
