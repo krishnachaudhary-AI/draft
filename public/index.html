@@ -17,6 +17,9 @@
   li span { flex: 1; }
   li.done span { text-decoration: line-through; color: #999; }
   .empty { text-align: center; color: #888; }
+  .filters { display: flex; gap: 6px; margin-bottom: 8px; }
+  .filters input { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 6px; }
+  button.active { background: #3b6ef5; }
 </style>
 </head>
 <body>
@@ -26,12 +29,29 @@
   <input type="text" id="title" placeholder="New task..." required>
   <button>Add</button>
 </form>
+<div class="filters">
+  <input type="text" id="search" placeholder="Search tasks...">
+  <button class="secondary active" data-filter="all">All</button>
+  <button class="secondary" data-filter="active">Active</button>
+  <button class="secondary" data-filter="done">Completed</button>
+</div>
 <p style="text-align:right"><button class="secondary" id="clear-done">Clear completed</button></p>
 <ul id="list"></ul>
 
 <script>
 const API = "/api/tasks";
 const list = document.getElementById("list");
+const searchBox = document.getElementById("search");
+let filter = "all";
+
+searchBox.oninput = () => render();
+document.querySelectorAll("[data-filter]").forEach((b) => {
+  b.onclick = () => {
+    filter = b.dataset.filter;
+    document.querySelectorAll("[data-filter]").forEach((x) => x.classList.toggle("active", x === b));
+    render();
+  };
+});
 
 async function api(method, id = "", body) {
   const res = await fetch(`${API}/${id}`, {
@@ -44,9 +64,14 @@ async function api(method, id = "", body) {
 }
 
 async function render() {
-  const tasks = await api("GET");
+  const all = await api("GET");
+  const q = searchBox.value.trim().toLowerCase();
+  const tasks = all.filter((t) =>
+    t.title.toLowerCase().includes(q) &&
+    (filter === "all" || (filter === "done" ? t.done : !t.done)));
   list.innerHTML = "";
-  if (!tasks.length) list.innerHTML = '<p class="empty">No tasks yet.</p>';
+  if (!tasks.length)
+    list.innerHTML = `<p class="empty">${all.length ? "No matching tasks." : "No tasks yet."}</p>`;
   for (const t of tasks) {
     const li = document.createElement("li");
     if (t.done) li.className = "done";
