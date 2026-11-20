@@ -15,6 +15,15 @@ function save(items) {
   fs.writeFileSync(DB_FILE, JSON.stringify(items, null, 2));
 }
 
+const PRIORITIES = ["low", "medium", "high"];
+
+// undefined = not provided; otherwise must be one of PRIORITIES
+function parsePriority(v) {
+  if (v === undefined) return undefined;
+  if (!PRIORITIES.includes(v)) throw new Error("priority must be low, medium or high");
+  return v;
+}
+
 function send(res, status, body) {
   res.writeHead(status, { "Content-Type": "application/json" });
   res.end(body === undefined ? "" : JSON.stringify(body));
@@ -52,6 +61,7 @@ async function handleApi(req, res, id) {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
       title: String(body.title).trim(),
       done: false,
+      priority: parsePriority(body.priority) ?? "medium",
       createdAt: new Date().toISOString(),
     };
     items.push(item);
@@ -69,8 +79,17 @@ async function handleApi(req, res, id) {
       item.title = String(body.title).trim();
     }
     if (body.done !== undefined) item.done = !!body.done;
-    save(items);
+    const priority = parsePriority(body.priority);
+    if (priority !== undefined) item.priority = priority;    save(items);
     return send(res, 200, item);
+  }
+
+  // DELETE all completed tasks
+  if (req.method === "DELETE" && !id) {
+    const remaining = items.filter((t) => !t.done);
+    const removed = items.length - remaining.length;
+    save(remaining);
+    return send(res, 200, { removed });
   }
 
   // DELETE
@@ -87,7 +106,7 @@ async function handleApi(req, res, id) {
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
-  const match = url.pathname.match(/^\/api\/tasks(?:\/([^/]+))?$/);
+  const match = url.pathname.match(/^\/api\/tasks(?:\/([^/]+))?\/?$/);
 
   if (match) {
     try { await handleApi(req, res, match[1]); }
